@@ -17,8 +17,10 @@
 
 enum MODES : UINT
 {
-	DISABLED = 0,
-    ACTIVE
+    PADDING = 0,
+	DISABLED,
+    ACTIVE,
+    INVALID
 };
 
 // Forward declarations of functions included in this code module:

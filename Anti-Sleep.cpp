@@ -13,6 +13,7 @@ UINT const WMAPP_NOTIFYCALLBACK = WM_APP + 1;
 wchar_t const szWindowClass[] = L"HDMI Audio Anti-Sleep";
 // Use a guid to uniquely identify our icon
 class __declspec(uuid("d692a428-83d7-4506-b1f6-82b0045b99d6")) NotifIcon;
+HWND main_hwnd = NULL;
 
 int APIENTRY wWinMain(
     _In_ HINSTANCE hInstance,
@@ -42,8 +43,8 @@ int APIENTRY wWinMain(
 
     // Create the main window. This could be a hidden window if you don't need
     // any UI other than the notification icon.
-    HWND hwnd = CreateWindow(szWindowClass, szWindowClass, 0, 0, 0, 0, 0, 0, 0, g_hInst, 0);
-    if (hwnd)
+    main_hwnd = CreateWindow(szWindowClass, szWindowClass, 0, 0, 0, 0, 0, 0, 0, g_hInst, 0);
+    if (main_hwnd)
         MainLoop();
 
     return 0;
@@ -159,7 +160,9 @@ BOOL AddIcon(HWND hwnd)
     nid.guidItem = __uuidof(NotifIcon);
     nid.uCallbackMessage = WMAPP_NOTIFYCALLBACK;
     LoadIconMetric(g_hInst, MAKEINTRESOURCE(IDI_NOTIFICATIONICON1 + (int)DISABLED), LIM_SMALL, &nid.hIcon);
-    Shell_NotifyIcon(NIM_ADD, &nid);
+    BOOL ret = Shell_NotifyIcon(NIM_ADD, &nid);
+    if (ret != TRUE)
+        return FALSE;
 
     // NOTIFYICON_VERSION_4 is prefered
     nid.uVersion = NOTIFYICON_VERSION_4;
@@ -168,7 +171,7 @@ BOOL AddIcon(HWND hwnd)
 
 void UpdateIcon(MODES mode)
 {
-    static MODES old_mode = DISABLED;
+    static MODES old_mode = PADDING;
     if (mode == old_mode)
         return;
 
@@ -181,8 +184,13 @@ void UpdateIcon(MODES mode)
     if (hr != S_OK)
         return;
     BOOL ret = Shell_NotifyIcon(NIM_MODIFY, &nid);
-    if (ret != TRUE) //-V676
+    if (ret != TRUE)
+    {
+        DeleteIcon();
+        AddIcon(main_hwnd);
+        old_mode = PADDING;
         return;
+    }
 
     old_mode = mode;
 }
